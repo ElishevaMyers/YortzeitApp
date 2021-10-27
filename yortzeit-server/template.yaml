@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  YortziteApp
+
+  Sample SAM Template for YortziteApp
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  YortzeitTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: "y_id"
+          AttributeType: "S"
+
+      KeySchema:
+        - AttributeName: "y_id"
+          KeyType: "HASH"
+
+      TableName: "Yortzeit"
+
+    # Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    # Properties:
+    #   CodeUri: hello_world/
+    #   Handler: app.lambda_handler
+    #   Runtime: python3.8
+    #   Events:
+    #     HelloWorld:
+    #       Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+    #       Properties:
+    #         Path: /hello
+    #         Method: get
+
+  InsertItemsFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: /insert
+      Handler: app.insert_item
+      Runtime: python3.8
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref YortzeitTable
+      StageName: Prod
+      Cors:
+        AllowMethods: "'POST, GET'"
+        AllowHeaders: "'Access-Control-Allow-Origin'"
+        AllowOrigin: "https://fb7ckxz9q4.execute-api.eu-west-1.amazonaws.com"
+        AllowCredentials: true
+      Events:
+        InsertItem:
+          Type: Api
+          Properties:
+            Path: /insert
+            Method: post
+
+# 1. Make a DynamoDB table, first by clicking in the Console (the AWS website)
+# 2. Make a DynamoDB table in this YAML template.
+# 3. Modify hello_world/app.py so that it inserts a new Item in the DynamoDB table when it runs
+#   a. This will require adding permissions to the HelloWorldFunction to allow inserting items to the DynamoDB table
+
+# {
+#   "Name": "Max",
+#   "Age": 34,
+#   "Kids": [
+#     "Ayelet",
+#     "Nava"
+#     1
+#   ],
+#   "Home": {
+#     "Street": "Reish Lakish",
+#     "Number": 6
+#   }
+# }
+# Name: Max
+# Age: 34
+# Kids:
+#   - Ayelet
+#   - Nava
+#   - 2
+# Home:
+#   Street: Reish Lakish
+#   Number: 6
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  # HelloWorldFunction:
+  #   Description: "Hello World Lambda Function ARN"
+  #   Value: !GetAtt HelloWorldFunction.Arn
+  # HelloWorldFunctionIamRole:
+  #   Description: "Implicit IAM Role created for Hello World function"
+  #   Value: !GetAtt HelloWorldFunctionRole.Arn
+  InsertApi:
+    Description: "API Gateway endpoint URL for Prod stage for Insert function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/insert"
